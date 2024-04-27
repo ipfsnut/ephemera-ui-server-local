@@ -3,6 +3,8 @@ const express = require("express");
 const multer = require("multer");
 const path = require("path");
 const ipfsClient = require("ipfs-http-client");
+const { exec } = require('child_process');
+
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
@@ -47,7 +49,24 @@ app.get("/pinned-files", async (req, res) => {
   }
 });
 
+// Route for retrieving node info
+info', async (req, res) => {
+  try {
+    exec('ipfs id', (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
+        return res.status(500).send('Error getting IPFS node information');
+      }
+      res.send(`IPFS Node Information:\n${stdout}`);
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error getting IPFS node information');
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
