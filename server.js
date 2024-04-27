@@ -1,10 +1,10 @@
-// server.js
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
 const ipfsClient = require("ipfs-http-client");
-const { exec } = require('child_process');
-
+const { exec } = require("child_process");
+const fs = require("fs");
+const formidable = require("formidable"); // Import formidable
 
 const app = express();
 const upload = multer({ dest: "uploads/" });
@@ -37,6 +37,32 @@ app.post("/upload", upload.single("file"), async (req, res) => {
   }
 });
 
+// Route for handling directory uploads
+app.post("/upload-folder", (req, res) => {
+  const form = formidable({ multiples: true });
+
+  form.parse(req, async (err, fields, files) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Error uploading directory");
+    }
+
+    const uploadedDir = files.file.path; // Assuming the field name is 'file'
+
+    try {
+      const dirAdded = await ipfs.add(fs.createReadStream(uploadedDir), {
+        recursive: true,
+      });
+      const dirCid = dirAdded.cid.toString();
+      await ipfs.pin.add(dirCid);
+      res.send(`Directory uploaded and pinned to IPFS with CID: ${dirCid}`);
+    } catch (err) {
+      console.error(err);
+      res.status(500).send("Error uploading and pinning directory");
+    }
+  });
+});
+
 // Route for retrieving pinned files
 app.get("/pinned-files", async (req, res) => {
   try {
@@ -50,18 +76,18 @@ app.get("/pinned-files", async (req, res) => {
 });
 
 // Route for retrieving node info
-info', async (req, res) => {
+app.get("/ipfs-info", async (req, res) => {
   try {
-    exec('ipfs id', (error, stdout, stderr) => {
+    exec("ipfs id", (error, stdout, stderr) => {
       if (error) {
         console.error(`exec error: ${error}`);
-        return res.status(500).send('Error getting IPFS node information');
+        return res.status(500).send("Error getting IPFS node information");
       }
       res.send(`IPFS Node Information:\n${stdout}`);
     });
   } catch (err) {
     console.error(err);
-    res.status(500).send('Error getting IPFS node information');
+    res.status(500).send("Error getting IPFS node information");
   }
 });
 
@@ -69,4 +95,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
