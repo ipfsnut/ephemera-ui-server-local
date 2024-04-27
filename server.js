@@ -9,11 +9,10 @@ const upload = multer({ dest: "uploads/" });
 
 // Configure IPFS client
 const ipfs = ipfsClient.create({
-  host: 'localhost',
-  port: 5001,
-  protocol: 'http',
+  host: process.env.IPFS_HOST || "localhost",
+  port: process.env.IPFS_PORT || 5001,
+  protocol: "http",
 });
-
 
 // Serve static files from the uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
